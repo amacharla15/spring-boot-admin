@@ -16,15 +16,35 @@
 
 package de.codecentric.boot.admin.sample;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.session.SessionAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.test.web.reactive.server.WebTestClient;
+
+import de.codecentric.boot.admin.server.config.EnableAdminServer;
+
+import static org.springframework.http.HttpMethod.POST;
 
 class InstancesRegistrationSecurityIntegrationTest {
 
@@ -36,10 +56,13 @@ class InstancesRegistrationSecurityIntegrationTest {
 
 	@BeforeAll
 	static void setUp() {
-		instance = new SpringApplicationBuilder().sources(SpringBootAdminServletApplication.class)
+		instance = new SpringApplicationBuilder().sources(TestAdminApplication.class)
 			.web(WebApplicationType.SERVLET)
-			.profiles("secure")
-			.run("--server.port=0");
+			.run("--server.port=0",
+					"--spring.autoconfigure.exclude=" + DataSourceAutoConfiguration.class.getName() + ","
+							+ SessionAutoConfiguration.class.getName() + ","
+							+ "org.springframework.boot.autoconfigure.session.jdbc.JdbcSessionAutoConfiguration",
+					"--spring.session.store-type=none");
 
 		port = instance.getEnvironment().getProperty("local.server.port", Integer.class, 0);
 
@@ -85,9 +108,35 @@ class InstancesRegistrationSecurityIntegrationTest {
 	}
 
 	private static String basicAuth(String username, String password) {
-		String token = java.util.Base64.getEncoder()
-			.encodeToString((username + ":" + password).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+		String token = Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
 		return "Basic " + token;
+	}
+
+	@EnableAdminServer
+	@EnableAutoConfiguration
+	@SpringBootConfiguration
+	static class TestAdminApplication {
+
+		@Bean
+		SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+			http.authorizeHttpRequests((authz) -> authz.anyRequest().authenticated())
+				.httpBasic(Customizer.withDefaults())
+				.csrf((csrf) -> csrf
+					.ignoringRequestMatchers(PathPatternRequestMatcher.withDefaults().matcher(POST, "/instances")));
+			return http.build();
+		}
+
+		@Bean
+		InMemoryUserDetailsManager userDetailsService(PasswordEncoder passwordEncoder) {
+			return new InMemoryUserDetailsManager(
+					User.withUsername("user").password(passwordEncoder.encode("password")).roles("USER").build());
+		}
+
+		@Bean
+		PasswordEncoder passwordEncoder() {
+			return new BCryptPasswordEncoder();
+		}
+
 	}
 
 }
