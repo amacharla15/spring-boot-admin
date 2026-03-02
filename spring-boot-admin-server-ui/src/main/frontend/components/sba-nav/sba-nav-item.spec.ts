@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { render, screen } from '@testing-library/vue'
-import SbaNavItem from './sba-nav-item.vue'
+import { render, screen } from '@testing-library/vue';
+
+import SbaNavItem from './sba-nav-item.vue';
 
 describe('sba-nav-item click affordance', () => {
   it('applies cursor pointer affordance', () => {
     render(SbaNavItem, {
       global: {
         stubs: {
-          RouterLink: { template: '<a class="sba-nav-item"><slot /></a>' }
-        }
+          RouterLink: { template: '<a class="sba-nav-item"><slot /></a>' },
+        },
       },
       slots: {
-        default: 'Applications'
-      }
-    })
+        default: 'Applications',
+      },
+    });
 
-    const el = screen.getByText('Applications')
-    const clickable = (el.closest('.sba-nav-item') || el) as HTMLElement
-    expect(clickable.className).toContain('sba-nav-item')
-    expect(clickable.className).toContain('cursor-pointer')
-  })
-})
+    const el = screen.getByText('Applications');
+    const clickable = (el.closest('.sba-nav-item') || el) as HTMLElement;
+    expect(clickable.className).toContain('sba-nav-item');
+    expect(clickable.className).toContain('cursor-pointer');
+  });
+});
