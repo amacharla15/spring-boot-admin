@@ -3,16 +3,16 @@
     v-if="href"
     :href="href"
     :target="target"
-    class="sba-nav-item"
+    class="sba-nav-item cursor-pointer"
     rel="noopener noreferrer"
   >
     <slot />
   </a>
-  <router-link v-else-if="to" :to="to" class="sba-nav-item">
+  <router-link v-else-if="to" :to="to" class="sba-nav-item cursor-pointer">
     <slot />
   </router-link>
 
-  <div v-else class="sba-nav-item">
+  <div v-else class="sba-nav-item cursor-pointer">
     <slot />
   </div>
 </template>
@@ -39,7 +39,7 @@ defineProps({
 
 <style scoped>
 .sba-nav-item {
-  @apply px-3 py-2 rounded lg:self-center hover:bg-sba-700;
+  @apply px-3 py-2 rounded lg:self-center hover:bg-sba-700 cursor-pointer;
 }
 </style>
 <style>
