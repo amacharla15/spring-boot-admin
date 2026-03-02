@@ -73,7 +73,10 @@ export default defineConfig([
       ],
     },
   },
-  globalIgnores(['**/dist']),
+    globalIgnores([
+        '**/dist',
+        '**/src/main/frontend/public/mockServiceWorker.js',
+    ]),
   {
     rules: {
       'no-undef': 'off',

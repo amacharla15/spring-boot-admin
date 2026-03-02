@@ -55,12 +55,7 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: 'jsdom',
       setupFiles: [resolve(frontendDir, 'tests/setup.ts')],
-      include: [
-        resolve(
-          frontendDir,
-          '**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-        ),
-      ],
+      include: ['src/main/frontend/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     },
     root: frontendDir,
     build: {
