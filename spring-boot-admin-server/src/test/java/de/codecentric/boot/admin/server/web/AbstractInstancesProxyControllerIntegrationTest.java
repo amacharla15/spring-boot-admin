@@ -168,6 +168,8 @@ public abstract class AbstractInstancesProxyControllerIntegrationTest {
 			.exchange()
 			.expectStatus()
 			.isEqualTo(HttpStatus.OK)
+			.expectHeader()
+			.valueEquals(CONTENT_TYPE, ACTUATOR_CONTENT_TYPE)
 			.expectBody()
 			.json("{ \"foo\" : \"bar\" }");
 
@@ -189,6 +191,23 @@ public abstract class AbstractInstancesProxyControllerIntegrationTest {
 			.json("{\"error\": \"You're doing it wrong!\"}");
 
 		this.wireMock.verify(deleteRequestedFor(urlEqualTo("/instance1/delete")));
+	}
+
+	@Test
+	public void should_not_forward_hop_by_hop_headers() {
+		String headerName = "X-Application-Context";
+		String headerValue = "secret";
+
+		this.client.get()
+			.uri("/instances/{instanceId}/actuator/test", this.instanceId)
+			.accept(new MediaType(ApiVersion.LATEST.getProducedMimeType()))
+			.header(headerName, headerValue)
+			.exchange()
+			.expectStatus()
+			.isEqualTo(HttpStatus.OK);
+
+		this.wireMock.verify(0,
+				getRequestedFor(urlEqualTo("/instance1/test")).withHeader(headerName, equalTo(headerValue)));
 	}
 
 	@Test
