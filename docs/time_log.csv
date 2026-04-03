@@ -1,0 +1,8 @@
+date,issue_id,issue_title,person,activity,minutes,notes,pr_link
+
+2026-04-03,19,Ensure Promise rejections use Error objects in sba-action-button-scoped.stories.ts,Akshith,triage,15,Reviewed issue and located affected story file,
+2026-04-03,18,Fix accessibility label/control association in sba-input.vue and sba-checkbox.vue,Akshith,triage,15,Reviewed issue and checked affected Vue components,
+2026-04-03,14,Reduce long parameter list in ServletApplicationFactory constructor,Akshith,triage,15,Reviewed constructor issue and main call site,
+2026-04-03,15,Convert TODO tech-debt markers into tracked tasks and remove TODOs from code/docs,Akshith,plan,15,Narrowed issue scope to docs TODO first,
+2026-04-03,17,Stop swallowing instance registration failures,Akshith,triage,15,Reviewed issue and identified likely target behavior,
+2026-04-03,13,Split frontend services/instance.ts into cohesive service modules,Akshith,plan,15,Narrowed issue scope to a small extraction for reviewability,
