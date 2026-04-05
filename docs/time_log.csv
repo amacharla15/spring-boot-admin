@@ -12,3 +12,6 @@ date,issue_id,issue_title,person,activity,minutes,notes,pr_link
 actual:
 2026-04-03,19,Ensure Promise rejections use Error objects in sba-action-button-scoped.stories.ts,Akshith,verify,15,Checked diff to confirm only the two rejection sites changed,
 2026-04-03,19,Ensure Promise rejections use Error objects in sba-action-button-scoped.stories.ts,Akshith,implement,15,Added Promise<void> typing to story promises and replaced bare reject() calls with Error objects,
+2026-04-03,19,Ensure Promise rejections use Error objects in sba-action-button-scoped.stories.ts,Akshith,pr_overhead,15,Opened PR and added summary verification and evidence,<PR link>
+2026-04-05,19,Ensure Promise rejections use Error objects in sba-action-button-scoped.stories.ts,Akshith,pr_overhead,15,Opened PR and added summary verification and evidence,https://github.com/amacharla15/spring-boot-admin/pull/22
+Add-Content docs/time_log.csv '2026-04-05,19,Ensure Promise rejections use Error objects in sba-action-button-scoped.stories.ts,Akshith,review,15,Performed solo self-review on PR 22,https://github.com/amacharla15/spring-boot-admin/pull/22'
