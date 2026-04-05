@@ -38,7 +38,7 @@ export const OneInstanceSuccessful = {
     instanceCount: 1,
     label: 'Push me!',
     actionFn() {
-      return new Promise((resolve) => {
+      return new Promise<void>((resolve) => {
         setTimeout(() => resolve(), 2000);
       });
     },
@@ -63,7 +63,7 @@ export const OneInstanceFailing = {
     actionFn() {
       return new Promise((resolve, reject) => {
         setTimeout(() => {
-          reject();
+          reject(new Error('Action failed'));
         }, 2000);
       });
     },
@@ -93,7 +93,7 @@ export const SlottedOneInstanceSuccessful = {
   args: {
     instanceCount: 1,
     actionFn() {
-      return new Promise((resolve) => {
+      return new Promise<void>((resolve) => {
         setTimeout(() => {
           resolve();
         }, 2000);
@@ -110,7 +110,7 @@ export const SlottedOneInstanceFailing = {
     actionFn() {
       return new Promise((resolve, reject) => {
         setTimeout(() => {
-          reject();
+          reject(new Error('Action failed'));
         }, 2000);
       });
     },
