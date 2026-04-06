@@ -113,10 +113,9 @@ public class SpringBootAdminClientAutoConfiguration {
 				ServerProperties server, ServletContext servletContext, PathMappedEndpoints pathMappedEndpoints,
 				WebEndpointProperties webEndpoint, ObjectProvider<List<MetadataContributor>> metadataContributors,
 				DispatcherServletPath dispatcherServletPath) {
-			return new ServletApplicationFactory(instance, management, server, servletContext, pathMappedEndpoints,
-					webEndpoint,
-					new CompositeMetadataContributor(metadataContributors.getIfAvailable(Collections::emptyList)),
-					dispatcherServletPath);
+			return new ServletApplicationFactory(instance, management, server, pathMappedEndpoints, webEndpoint,
+				new CompositeMetadataContributor(metadataContributors.getIfAvailable(Collections::emptyList)),
+				new ServletApplicationFactory.ServletDependencies(servletContext, dispatcherServletPath));
 		}
 
 	}
