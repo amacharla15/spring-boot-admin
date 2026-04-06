@@ -24,3 +24,6 @@ Add-Content docs/time_log.csv '2026-04-06,15,Convert TODO tech-debt markers into
 Add-Content docs/time_log.csv '2026-04-06,15,Convert TODO tech-debt markers into tracked tasks and remove TODOs from code/docs,Akshith,verify,15,Checked diff to confirm only pom.xml and time log changed,'
 2026-04-06,15,Convert TODO tech-debt markers into tracked tasks and remove TODOs from code/docs,Akshith,pr_overhead,15,Opened PR and added summary verification and evidence,https://github.com/amacharla15/spring-boot-admin/pull/25
 2026-04-06,15,Convert TODO tech-debt markers into tracked tasks and remove TODOs from code/docs,Akshith,review,15,Performed solo self-review on PR 25,https://github.com/amacharla15/spring-boot-admin/pull/25
+2026-04-06,17,Stop swallowing instance registration failures,Akshith,implement,15,Stopped swallowing errors in registerInstance and added per-instance continuation in discover pipeline,
+2026-04-06,17,Stop swallowing instance registration failures,Akshith,implement,15,Added unit test to assert registerInstance now propagates conversion failure,
+2026-04-06,17,Stop swallowing instance registration failures,Akshith,verify,15,Reviewed diff to confirm only listener test and time log changed and existing continuation behavior test remains relevant,
