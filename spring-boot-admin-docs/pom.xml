@@ -93,7 +93,7 @@
                             <inputs>
                                 <input>
                                     <name>spring-boot-admin-server</name>
-                                    <!-- TODO use ${project.rootDirectory}/spring-boot-admin-server as soon as migrated to maven 4 -->
+                                    <!-- Tracked in #15: switch to ${project.rootDirectory}/spring-boot-admin-server after Maven 4 migration -->
                                     <input>../spring-boot-admin-server</input>
                                 </input>
                             </inputs>
