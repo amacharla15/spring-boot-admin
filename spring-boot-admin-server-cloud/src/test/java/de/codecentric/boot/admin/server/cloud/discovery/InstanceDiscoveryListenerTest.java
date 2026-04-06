@@ -365,4 +365,18 @@ class InstanceDiscoveryListenerTest {
 			.verifyComplete();
 	}
 
+	@Test
+	void should_propagate_error_when_register_instance_conversion_fails() {
+		ServiceInstance instance = new DefaultServiceInstance("error-1", "error", "localhost", 80, false);
+		this.listener.setConverter((serviceInstance) -> {
+			throw new IllegalStateException("Test-Error");
+		});
+
+		StepVerifier.create(this.listener.registerInstance(instance))
+			.expectErrorSatisfies((ex) -> assertThat(ex)
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessage("Test-Error"))
+			.verify();
+	}
+
 }

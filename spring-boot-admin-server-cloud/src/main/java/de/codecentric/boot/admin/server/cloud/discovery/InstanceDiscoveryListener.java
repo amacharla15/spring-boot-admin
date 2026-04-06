@@ -134,6 +134,7 @@ public class InstanceDiscoveryListener {
 			.flatMapIterable(discoveryClient::getInstances)
 			.filter(this::shouldRegisterInstanceBasedOnMetadata)
 			.flatMap(this::registerInstance)
+			.onErrorContinue((ex, instance) -> log.error("Couldn't register instance for discovered instance ({})", instance, ex))
 			.collect(Collectors.toSet())
 			.flatMap(this::removeStaleInstances)
 			.subscribe((v) -> {
@@ -175,15 +176,11 @@ public class InstanceDiscoveryListener {
 	}
 
 	protected Mono<InstanceId> registerInstance(ServiceInstance instance) {
-		try {
+		return Mono.defer(() -> {
 			Registration registration = converter.convert(instance).toBuilder().source(SOURCE).build();
 			log.debug("Registering discovered instance {}", registration);
 			return registry.register(registration);
-		}
-		catch (Exception ex) {
-			log.error("Couldn't register instance for discovered instance ({})", toString(instance), ex);
-			return Mono.empty();
-		}
+		});
 	}
 
 	protected String toString(ServiceInstance instance) {
