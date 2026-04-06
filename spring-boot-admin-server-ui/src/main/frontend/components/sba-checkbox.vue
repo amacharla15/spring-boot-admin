@@ -8,7 +8,9 @@
       :name="name"
       @change="$emit('update:modelValue', $event.target.checked)"
     />
-    <label :for="id" class="ml-2 font-medium text-gray-700" v-text="label" />
+    <label :for="id" class="ml-2 font-medium text-gray-700">
+      {{ label }}
+    </label>
   </div>
 </template>
 

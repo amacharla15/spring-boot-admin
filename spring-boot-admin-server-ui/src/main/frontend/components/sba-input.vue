@@ -21,17 +21,17 @@
         v-if="hasLabel"
         :for="id"
         class="block text-sm font-medium text-gray-700"
-        v-text="label"
-      />
+      >
+        {{ label }}
+      </label>
       <div :class="{ 'mt-1': hasLabel }" class="flex rounded shadow-sm">
         <!-- PREPEND -->
-        <label
+        <span
           v-if="$slots.prepend"
-          :for="id"
           class="inline-flex items-center px-3 rounded-l border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"
         >
           <slot name="prepend" />
-        </label>
+        </span>
 
         <!-- INPUT -->
         <datalist :id="datalistId">
