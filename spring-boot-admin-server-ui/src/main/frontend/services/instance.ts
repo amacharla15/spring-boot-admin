@@ -28,6 +28,7 @@ import uri from '../utils/uri';
 import { useSbaConfig } from '@/sba-config';
 import { actuatorMimeTypes } from '@/services/spring-mime-types';
 import { transformToJSON } from '@/utils/transformToJSON';
+import type { Registration, StatusInfo } from './instance.types';
 
 const isInstanceActuatorRequest = (url: string) =>
   url.match(/^instances[/][^/]+[/]actuator([/].*)?$/);
@@ -473,29 +474,8 @@ class Instance {
   }
 }
 
+
 export default Instance;
 
-export type Registration = {
-  name: string;
-  managementUrl?: string;
-  healthUrl: string;
-  serviceUrl?: string;
-  source: string;
-  metadata?: { [key: string]: string }[];
-};
-
-type StatusInfo = {
-  status:
-    | 'UNKNOWN'
-    | 'OUT_OF_SERVICE'
-    | 'UP'
-    | 'DOWN'
-    | 'OFFLINE'
-    | 'RESTRICTED'
-    | string;
-  details: { [key: string]: string };
-};
-
-export const DOWN_STATES = ['OUT_OF_SERVICE', 'DOWN', 'OFFLINE', 'RESTRICTED'];
-export const UP_STATES = ['UP'];
-export const UNKNOWN_STATES = ['UNKNOWN'];
+export type { Registration } from './instance.types';
+export { DOWN_STATES, UP_STATES, UNKNOWN_STATES } from './instance.types';

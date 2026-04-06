@@ -29,3 +29,7 @@ Add-Content docs/time_log.csv '2026-04-06,15,Convert TODO tech-debt markers into
 2026-04-06,17,Stop swallowing instance registration failures,Akshith,verify,15,Reviewed diff to confirm only listener test and time log changed and existing continuation behavior test remains relevant,
 2026-04-06,17,Stop swallowing instance registration failures,Akshith,pr_overhead,15,Opened PR and added summary verification and evidence,https://github.com/amacharla15/spring-boot-admin/pull/26
 2026-04-06,17,Stop swallowing instance registration failures,Akshith,review,15,Performed solo self-review on PR 26,https://github.com/amacharla15/spring-boot-admin/pull/26
+2026-04-06,13,Split frontend services/instance.ts into cohesive service modules,Akshith,implement,15,Extracted shared types and status constants from instance.ts into instance.types.ts while preserving exports,
+2026-04-06,13,Split frontend services/instance.ts into cohesive service modules,Akshith,verify,15,Checked diff to confirm extraction stayed limited to instance.ts new instance.types.ts and time log,
+2026-04-06,13,Split frontend services/instance.ts into cohesive service modules,Akshith,pr_overhead,15,Opened PR and added summary verification and evidence,https://github.com/amacharla15/spring-boot-admin/pull/27
+2026-04-06,13,Split frontend services/instance.ts into cohesive service modules,Akshith,review,15,Performed solo self-review on PR 27,https://github.com/amacharla15/spring-boot-admin/pull/27
