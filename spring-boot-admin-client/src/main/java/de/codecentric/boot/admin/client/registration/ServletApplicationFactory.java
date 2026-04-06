@@ -30,7 +30,8 @@ import de.codecentric.boot.admin.client.config.InstanceProperties;
 import de.codecentric.boot.admin.client.registration.metadata.MetadataContributor;
 
 public class ServletApplicationFactory extends DefaultApplicationFactory {
-
+	public record ServletDependencies(ServletContext servletContext, DispatcherServletPath dispatcherServletPath) {
+	}
 	private final ServletContext servletContext;
 
 	private final ServerProperties server;
@@ -42,15 +43,14 @@ public class ServletApplicationFactory extends DefaultApplicationFactory {
 	private final DispatcherServletPath dispatcherServletPath;
 
 	public ServletApplicationFactory(InstanceProperties instance, ManagementServerProperties management,
-			ServerProperties server, ServletContext servletContext, PathMappedEndpoints pathMappedEndpoints,
-			WebEndpointProperties webEndpoint, MetadataContributor metadataContributor,
-			DispatcherServletPath dispatcherServletPath) {
+									 ServerProperties server, PathMappedEndpoints pathMappedEndpoints, WebEndpointProperties webEndpoint,
+									 MetadataContributor metadataContributor, ServletDependencies servletDependencies) {
 		super(instance, management, server, pathMappedEndpoints, webEndpoint, metadataContributor);
-		this.servletContext = servletContext;
+		this.servletContext = servletDependencies.servletContext();
 		this.server = server;
 		this.management = management;
 		this.instance = instance;
-		this.dispatcherServletPath = dispatcherServletPath;
+		this.dispatcherServletPath = servletDependencies.dispatcherServletPath();
 	}
 
 	@Override
@@ -103,3 +103,4 @@ public class ServletApplicationFactory extends DefaultApplicationFactory {
 	}
 
 }
+
