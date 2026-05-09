@@ -16,11 +16,8 @@
 
 package de.codecentric.boot.admin.server.web;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.springframework.http.HttpHeaders;
 
@@ -34,16 +31,14 @@ import static java.util.stream.Collectors.toMap;
  */
 public class HttpHeaderFilter {
 
-	private static final String[] HOP_BY_HOP_HEADERS = new String[] { "Host", "Connection", "Keep-Alive",
-			"Proxy-Authenticate", "Proxy-Authorization", "TE", "Trailer", "Transfer-Encoding", "Upgrade",
-			"X-Application-Context" };
-
-	private final Set<String> ignoredHeaders;
+	private final HeaderFilterStrategy headerFilterStrategy;
 
 	public HttpHeaderFilter(Set<String> ignoredHeaders) {
-		this.ignoredHeaders = Stream.concat(ignoredHeaders.stream(), Arrays.stream(HOP_BY_HOP_HEADERS))
-			.map(String::toLowerCase)
-			.collect(Collectors.toSet());
+		this(new DefaultHeaderFilterStrategy(ignoredHeaders));
+	}
+
+	public HttpHeaderFilter(HeaderFilterStrategy headerFilterStrategy) {
+		this.headerFilterStrategy = headerFilterStrategy;
 	}
 
 	public HttpHeaders filterHeaders(HttpHeaders headers) {
@@ -56,7 +51,7 @@ public class HttpHeaderFilter {
 	}
 
 	private boolean includeHeader(String header) {
-		return !this.ignoredHeaders.contains(header.toLowerCase());
+		return this.headerFilterStrategy.includeHeader(header);
 	}
 
 }
