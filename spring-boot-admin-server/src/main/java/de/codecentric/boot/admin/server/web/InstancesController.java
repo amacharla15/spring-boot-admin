@@ -16,13 +16,8 @@
 
 package de.codecentric.boot.admin.server.web;
 
-import java.net.URI;
-import java.time.Duration;
-import java.util.Collections;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
@@ -51,20 +46,10 @@ import de.codecentric.boot.admin.server.services.InstanceRegistry;
 @ResponseBody
 public class InstancesController {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(InstancesController.class);
-
-	private static final ServerSentEvent<?> PING = ServerSentEvent.builder().comment("ping").build();
-
-	private static final Flux<ServerSentEvent<?>> PING_FLUX = Flux.interval(Duration.ZERO, Duration.ofSeconds(10L))
-		.map((tick) -> PING);
-
-	private final InstanceRegistry registry;
-
-	private final InstanceEventStore eventStore;
+	private final InstanceAdministrationFacade instanceAdministrationFacade;
 
 	public InstancesController(InstanceRegistry registry, InstanceEventStore eventStore) {
-		this.registry = registry;
-		this.eventStore = eventStore;
+		this.instanceAdministrationFacade = new InstanceAdministrationFacade(registry, eventStore);
 	}
 
 	/**
@@ -76,12 +61,7 @@ public class InstancesController {
 	@PostMapping(path = "/instances", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public Mono<ResponseEntity<Map<String, InstanceId>>> register(@RequestBody Registration registration,
 			UriComponentsBuilder builder) {
-		Registration withSource = Registration.copyOf(registration).source("http-api").build();
-		LOGGER.debug("Register instance {}", withSource);
-		return registry.register(withSource).map((id) -> {
-			URI location = builder.replacePath("/instances/{id}").buildAndExpand(id).toUri();
-			return ResponseEntity.created(location).body(Collections.singletonMap("id", id));
-		});
+		return this.instanceAdministrationFacade.register(registration, builder);
 	}
 
 	/**
@@ -91,7 +71,7 @@ public class InstancesController {
 	 */
 	@GetMapping(path = "/instances", produces = MediaType.APPLICATION_JSON_VALUE, params = "name")
 	public Flux<Instance> instances(@RequestParam("name") String name) {
-		return registry.getInstances(name).filter(Instance::isRegistered);
+		return this.instanceAdministrationFacade.getInstances(name);
 	}
 
 	/**
@@ -100,8 +80,7 @@ public class InstancesController {
 	 */
 	@GetMapping(path = "/instances", produces = MediaType.APPLICATION_JSON_VALUE)
 	public Flux<Instance> instances() {
-		LOGGER.debug("Deliver all registered instances");
-		return registry.getInstances().filter(Instance::isRegistered);
+		return this.instanceAdministrationFacade.getInstances();
 	}
 
 	/**
@@ -111,11 +90,7 @@ public class InstancesController {
 	 */
 	@GetMapping(path = "/instances/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public Mono<ResponseEntity<Instance>> instance(@PathVariable String id) {
-		LOGGER.debug("Deliver registered instance with ID '{}'", id);
-		return registry.getInstance(InstanceId.of(id))
-			.filter(Instance::isRegistered)
-			.map(ResponseEntity::ok)
-			.defaultIfEmpty(ResponseEntity.notFound().build());
+		return this.instanceAdministrationFacade.getInstance(id);
 	}
 
 	/**
@@ -125,10 +100,7 @@ public class InstancesController {
 	 */
 	@DeleteMapping(path = "/instances/{id}")
 	public Mono<ResponseEntity<Void>> unregister(@PathVariable String id) {
-		LOGGER.debug("Unregister instance with ID '{}'", id);
-		return registry.deregister(InstanceId.of(id))
-			.map((v) -> ResponseEntity.noContent().<Void>build())
-			.defaultIfEmpty(ResponseEntity.notFound().build());
+		return this.instanceAdministrationFacade.unregister(id);
 	}
 
 	/**
@@ -138,7 +110,7 @@ public class InstancesController {
 	 */
 	@GetMapping(path = "/instances/events", produces = MediaType.APPLICATION_JSON_VALUE)
 	public Flux<InstanceEvent> events() {
-		return eventStore.findAll();
+		return this.instanceAdministrationFacade.getEvents();
 	}
 
 	/**
@@ -148,7 +120,7 @@ public class InstancesController {
 	 */
 	@GetMapping(path = "/instances/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	public Flux<ServerSentEvent<InstanceEvent>> eventStream() {
-		return Flux.from(eventStore).map((event) -> ServerSentEvent.builder(event).build()).mergeWith(ping());
+		return this.instanceAdministrationFacade.eventStream();
 	}
 
 	/**
@@ -159,36 +131,7 @@ public class InstancesController {
 	 */
 	@GetMapping(path = "/instances/{id}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	public Flux<ServerSentEvent<Instance>> instanceStream(@PathVariable String id) {
-		return Flux.from(eventStore)
-			.filter((event) -> event.getInstance().equals(InstanceId.of(id)))
-			.flatMap((event) -> registry.getInstance(event.getInstance()))
-			.map((event) -> ServerSentEvent.builder(event).build())
-			.mergeWith(ping());
-	}
-
-	/**
-	 * Returns a periodic Server-Sent Event (SSE) comment-only ping every 10 seconds.
-	 * <p>
-	 * This method is used to keep SSE connections alive for all event stream endpoints in
-	 * Spring Boot Admin. The ping event is sent as a comment (": ping") and does not
-	 * contain any data payload. <br>
-	 * <b>Why?</b> Many proxies, firewalls, and browsers may close idle HTTP connections.
-	 * The ping event provides regular activity on the stream, ensuring the connection
-	 * remains open even when no instance events are emitted. <br>
-	 * <b>Technical details:</b>
-	 * <ul>
-	 * <li>Interval: 10 seconds</li>
-	 * <li>Format: SSE comment-only event</li>
-	 * <li>Applies to: All event stream endpoints (e.g., /instances/events,
-	 * /instances/{id} with Accept: text/event-stream)</li>
-	 * </ul>
-	 * </p>
-	 * @param <T> the type of event data (unused for ping)
-	 * @return flux of ServerSentEvent representing periodic ping comments
-	 */
-	@SuppressWarnings("unchecked")
-	private static <T> Flux<ServerSentEvent<T>> ping() {
-		return (Flux<ServerSentEvent<T>>) (Flux) PING_FLUX;
+		return this.instanceAdministrationFacade.instanceStream(id);
 	}
 
 }
