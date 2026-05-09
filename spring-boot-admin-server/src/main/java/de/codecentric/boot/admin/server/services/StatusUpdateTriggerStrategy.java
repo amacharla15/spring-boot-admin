@@ -18,26 +18,34 @@ package de.codecentric.boot.admin.server.services;
 
 import java.time.Duration;
 
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import de.codecentric.boot.admin.server.domain.events.InstanceEvent;
+import de.codecentric.boot.admin.server.domain.events.InstanceRegisteredEvent;
+import de.codecentric.boot.admin.server.domain.events.InstanceRegistrationUpdatedEvent;
 import de.codecentric.boot.admin.server.domain.values.InstanceId;
 
-public class InfoUpdateTrigger extends AbstractInstanceUpdateTrigger {
+public class StatusUpdateTriggerStrategy implements InstanceUpdateTriggerStrategy {
 
-	public InfoUpdateTrigger(InfoUpdater infoUpdater, Publisher<InstanceEvent> publisher, Duration updateInterval,
-			Duration infoLifetime, Duration maxBackoff) {
-		this(new InfoUpdateTriggerStrategy(infoUpdater), publisher, updateInterval, infoLifetime, maxBackoff);
+	private final StatusUpdater statusUpdater;
+
+	public StatusUpdateTriggerStrategy(StatusUpdater statusUpdater) {
+		this.statusUpdater = statusUpdater;
 	}
 
-	InfoUpdateTrigger(InstanceUpdateTriggerStrategy triggerStrategy, Publisher<InstanceEvent> publisher,
-			Duration updateInterval, Duration infoLifetime, Duration maxBackoff) {
-		super(publisher, triggerStrategy, updateInterval, infoLifetime, maxBackoff);
+	@Override
+	public String getName() {
+		return "status";
 	}
 
-	protected Mono<Void> updateInfo(InstanceId instanceId) {
-		return updateInstance(instanceId);
+	@Override
+	public boolean supports(InstanceEvent event) {
+		return event instanceof InstanceRegisteredEvent || event instanceof InstanceRegistrationUpdatedEvent;
+	}
+
+	@Override
+	public Mono<Void> update(InstanceId instanceId, Duration timeout) {
+		return this.statusUpdater.timeout(timeout).updateStatus(instanceId);
 	}
 
 }

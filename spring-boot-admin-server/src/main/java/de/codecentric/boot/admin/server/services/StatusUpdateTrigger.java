@@ -19,68 +19,25 @@ package de.codecentric.boot.admin.server.services;
 import java.time.Duration;
 
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import de.codecentric.boot.admin.server.domain.events.InstanceEvent;
-import de.codecentric.boot.admin.server.domain.events.InstanceRegisteredEvent;
-import de.codecentric.boot.admin.server.domain.events.InstanceRegistrationUpdatedEvent;
 import de.codecentric.boot.admin.server.domain.values.InstanceId;
 
-public class StatusUpdateTrigger extends AbstractEventHandler<InstanceEvent> {
-
-	private static final Logger log = LoggerFactory.getLogger(StatusUpdateTrigger.class);
-
-	private final StatusUpdater statusUpdater;
-
-	private final IntervalCheck intervalCheck;
+public class StatusUpdateTrigger extends AbstractInstanceUpdateTrigger {
 
 	public StatusUpdateTrigger(StatusUpdater statusUpdater, Publisher<InstanceEvent> publisher, Duration updateInterval,
 			Duration statusLifetime, Duration maxBackoff) {
-		super(publisher, InstanceEvent.class);
-		this.statusUpdater = statusUpdater;
-		this.intervalCheck = new IntervalCheck("status", this::updateStatus, updateInterval, statusLifetime,
-				maxBackoff);
+		this(new StatusUpdateTriggerStrategy(statusUpdater), publisher, updateInterval, statusLifetime, maxBackoff);
 	}
 
-	@Override
-	protected Publisher<Void> handle(Flux<InstanceEvent> publisher) {
-		return publisher
-			.filter((event) -> event instanceof InstanceRegisteredEvent
-					|| event instanceof InstanceRegistrationUpdatedEvent)
-			.flatMap((event) -> updateStatus(event.getInstance()));
+	StatusUpdateTrigger(InstanceUpdateTriggerStrategy triggerStrategy, Publisher<InstanceEvent> publisher,
+			Duration updateInterval, Duration statusLifetime, Duration maxBackoff) {
+		super(publisher, triggerStrategy, updateInterval, statusLifetime, maxBackoff);
 	}
 
 	protected Mono<Void> updateStatus(InstanceId instanceId) {
-		return this.statusUpdater.timeout(this.intervalCheck.getInterval())
-			.updateStatus(instanceId)
-			.onErrorResume((e) -> {
-				log.warn("Unexpected error while updating status for {}", instanceId, e);
-				return Mono.empty();
-			})
-			.doFinally((s) -> this.intervalCheck.markAsChecked(instanceId));
-	}
-
-	@Override
-	public void start() {
-		super.start();
-		this.intervalCheck.start();
-	}
-
-	@Override
-	public void stop() {
-		super.stop();
-		this.intervalCheck.stop();
-	}
-
-	public void setInterval(Duration updateInterval) {
-		this.intervalCheck.setInterval(updateInterval);
-	}
-
-	public void setLifetime(Duration statusLifetime) {
-		this.intervalCheck.setMinRetention(statusLifetime);
+		return updateInstance(instanceId);
 	}
 
 }
