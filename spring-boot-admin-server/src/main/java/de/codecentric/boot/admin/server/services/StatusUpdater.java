@@ -21,9 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Level;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
@@ -48,19 +46,17 @@ import static java.util.Collections.emptyMap;
  * @author Johannes Edmeier
  */
 @Slf4j
-@RequiredArgsConstructor
-public class StatusUpdater {
+public class StatusUpdater extends AbstractInstanceEndpointUpdater<StatusInfo> {
 
 	private static final ParameterizedTypeReference<Map<String, Object>> RESPONSE_TYPE = new ParameterizedTypeReference<>() {
 	};
 
-	private final InstanceRepository repository;
-
-	private final InstanceWebClient instanceWebClient;
-
-	private final ApiMediaTypeHandler apiMediaTypeHandler;
-
 	private Duration timeout = Duration.ofSeconds(10);
+
+	public StatusUpdater(InstanceRepository repository, InstanceWebClient instanceWebClient,
+			ApiMediaTypeHandler apiMediaTypeHandler) {
+		super(repository, instanceWebClient, apiMediaTypeHandler);
+	}
 
 	public StatusUpdater timeout(Duration timeout) {
 		this.timeout = timeout;
@@ -68,24 +64,47 @@ public class StatusUpdater {
 	}
 
 	public Mono<Void> updateStatus(InstanceId id) {
-		return this.repository.computeIfPresent(id, (key, instance) -> this.doUpdateStatus(instance)).then();
+		return update(id);
 	}
 
-	protected Mono<Instance> doUpdateStatus(Instance instance) {
-		if (!instance.isRegistered()) {
-			return Mono.empty();
-		}
+	@Override
+	protected boolean shouldUpdate(Instance instance) {
+		return instance.isRegistered();
+	}
 
+	@Override
+	protected void logUpdate(Instance instance) {
 		log.debug("Update status for {}", instance);
-		return this.instanceWebClient.instance(instance)
-			.get()
-			.uri(Endpoint.HEALTH)
-			.exchangeToMono(this::convertStatusInfo)
-			.log(log.getName(), Level.FINEST)
-			.timeout(getTimeoutWithMargin())
-			.doOnError((ex) -> logError(instance, ex))
-			.onErrorResume(this::handleError)
-			.map(instance::withStatusInfo);
+	}
+
+	@Override
+	protected String getEndpoint() {
+		return Endpoint.HEALTH;
+	}
+
+	@Override
+	protected Mono<StatusInfo> convertResponse(Instance instance, ClientResponse response) {
+		return convertStatusInfo(response);
+	}
+
+	@Override
+	protected Mono<StatusInfo> applyRequestOptions(Mono<StatusInfo> response) {
+		return response.timeout(getTimeoutWithMargin());
+	}
+
+	@Override
+	protected Mono<StatusInfo> handleError(Instance instance, Throwable ex) {
+		return handleError(ex);
+	}
+
+	@Override
+	protected Instance applyUpdate(Instance instance, StatusInfo statusInfo) {
+		return instance.withStatusInfo(statusInfo);
+	}
+
+	@Override
+	protected String getLoggerName() {
+		return log.getName();
 	}
 
 	/*
@@ -100,7 +119,7 @@ public class StatusUpdater {
 		boolean hasCompatibleContentType = response.headers()
 			.contentType()
 			.filter((mt) -> mt.isCompatibleWith(MediaType.APPLICATION_JSON)
-					|| this.apiMediaTypeHandler.isApiMediaType(mt))
+					|| getApiMediaTypeHandler().isApiMediaType(mt))
 			.isPresent();
 
 		StatusInfo statusInfoFromStatus = this.getStatusInfoFromStatus(response.statusCode(), emptyMap());
@@ -139,6 +158,7 @@ public class StatusUpdater {
 		return Mono.just(StatusInfo.ofOffline(details));
 	}
 
+	@Override
 	protected void logError(Instance instance, Throwable ex) {
 		if (instance.getStatusInfo().isOffline()) {
 			log.debug("Couldn't retrieve status for {}", instance, ex);

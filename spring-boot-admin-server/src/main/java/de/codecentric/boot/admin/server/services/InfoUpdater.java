@@ -17,7 +17,6 @@
 package de.codecentric.boot.admin.server.services;
 
 import java.util.Map;
-import java.util.logging.Level;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,53 +38,63 @@ import de.codecentric.boot.admin.server.web.client.InstanceWebClient;
  *
  * @author Johannes Edmeier
  */
-public class InfoUpdater {
+public class InfoUpdater extends AbstractInstanceEndpointUpdater<Info> {
 
 	private static final Logger log = LoggerFactory.getLogger(InfoUpdater.class);
 
 	private static final ParameterizedTypeReference<Map<String, Object>> RESPONSE_TYPE = new ParameterizedTypeReference<>() {
 	};
 
-	private final InstanceRepository repository;
-
-	private final InstanceWebClient instanceWebClient;
-
-	private final ApiMediaTypeHandler apiMediaTypeHandler;
-
 	public InfoUpdater(InstanceRepository repository, InstanceWebClient instanceWebClient,
 			ApiMediaTypeHandler apiMediaTypeHandler) {
-		this.repository = repository;
-		this.instanceWebClient = instanceWebClient;
-		this.apiMediaTypeHandler = apiMediaTypeHandler;
+		super(repository, instanceWebClient, apiMediaTypeHandler);
 	}
 
 	public Mono<Void> updateInfo(InstanceId id) {
-		return this.repository.computeIfPresent(id, (key, instance) -> this.doUpdateInfo(instance)).then();
+		return update(id);
 	}
 
-	protected Mono<Instance> doUpdateInfo(Instance instance) {
-		if (instance.getStatusInfo().isOffline() || instance.getStatusInfo().isUnknown()) {
-			return Mono.empty();
-		}
-		if (!instance.getEndpoints().isPresent(Endpoint.INFO)) {
-			return Mono.empty();
-		}
+	@Override
+	protected boolean shouldUpdate(Instance instance) {
+		return !instance.getStatusInfo().isOffline() && !instance.getStatusInfo().isUnknown()
+				&& instance.getEndpoints().isPresent(Endpoint.INFO);
+	}
 
+	@Override
+	protected void logUpdate(Instance instance) {
 		log.debug("Update info for {}", instance);
-		return this.instanceWebClient.instance(instance)
-			.get()
-			.uri(Endpoint.INFO)
-			.exchangeToMono((response) -> convertInfo(instance, response))
-			.log(log.getName(), Level.FINEST)
-			.onErrorResume((ex) -> Mono.just(convertInfo(instance, ex)))
-			.map(instance::withInfo);
+	}
+
+	@Override
+	protected String getEndpoint() {
+		return Endpoint.INFO;
+	}
+
+	@Override
+	protected Mono<Info> convertResponse(Instance instance, ClientResponse response) {
+		return convertInfo(instance, response);
+	}
+
+	@Override
+	protected Mono<Info> handleError(Instance instance, Throwable ex) {
+		return Mono.just(convertInfo(instance, ex));
+	}
+
+	@Override
+	protected Instance applyUpdate(Instance instance, Info info) {
+		return instance.withInfo(info);
+	}
+
+	@Override
+	protected String getLoggerName() {
+		return log.getName();
 	}
 
 	protected Mono<Info> convertInfo(Instance instance, ClientResponse response) {
 		if (response.statusCode().is2xxSuccessful() && response.headers()
 			.contentType()
 			.filter((mt) -> mt.isCompatibleWith(MediaType.APPLICATION_JSON)
-					|| this.apiMediaTypeHandler.isApiMediaType(mt))
+					|| getApiMediaTypeHandler().isApiMediaType(mt))
 			.isPresent()) {
 			return response.bodyToMono(RESPONSE_TYPE).map(Info::from).defaultIfEmpty(Info.empty());
 		}
